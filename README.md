@@ -36,7 +36,7 @@ Usage
 代碼示例
 
 ```php
-composer require fukuball/jieba-php:dev-master
+composer require poplanchong123/jieba-php:dev-master
 ```
 
 代碼示例
