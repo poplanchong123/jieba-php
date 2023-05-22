@@ -141,14 +141,14 @@ class Jieba
     }// end function calc
 
     /**
-     * Static method genTrie
+     * Static method genTrieOld
      *
      * @param string $f_name  # input f_name
      * @param array  $options # other options
      *
      * @return array self::$trie
      */
-    public static function genTrie($f_name, $options = array())
+    public static function genTrieOld($f_name, $options = array())
     {
         $defaults = array(
             'mode'=>'default'
@@ -183,8 +183,62 @@ class Jieba
         fclose($content);
 
         return self::$trie;
+    }// end function genTrieOld
+
+    /**
+     * Static method genTrie
+     *
+     * @param string $f_name # input f_name
+     * @param array $options # other options
+     *
+     * @return array self::$trie
+     */
+    public static function genTrie($f_name, $options = array())
+    {
+        $defaults = array(
+            'mode' => 'default'
+        );
+        $options = array_merge($defaults, $options);
+        self::$trie = new MultiArray(file_get_contents($f_name . '.json'));
+        //self::$trie->cache = new MultiArray(file_get_contents($f_name.'.cache.json'));
+        if(file_exists($f_name.'.cache')){
+            #有缓存就取
+            $datas=json_decode(file_get_contents($f_name.'.cache'),true);
+            self::$original_freq=$datas['original_freq'];
+            self::$total = $datas['total'];
+        }else {
+            $content = fopen($f_name, "r");
+            while (($line = fgets($content)) !== false) {
+                $explode_line = explode(" ", trim($line));
+                $word = $explode_line[0];
+                $freq = $explode_line[1];
+                $tag = $explode_line[2];
+                $freq = (float)$freq;
+                if (isset(self::$original_freq[$word])) {
+                    self::$total -= self::$original_freq[$word];
+                }
+                self::$original_freq[$word] = $freq;
+                self::$total += $freq;
+                #//$l = mb_strlen($word, 'UTF-8');
+                #//$word_c = array();
+                #//for ($i=0; $i<$l; $i++) {
+                #//    $c = mb_substr($word, $i, 1, 'UTF-8');
+                #//    array_push($word_c, $c);
+                #//}
+                #//$word_c_key = implode('.', $word_c);
+                #//self::$trie->set($word_c_key, array("end"=>""));
+            }
+            fclose($content);
+            #添加缓存文件.cache
+            $datas=[];
+            $datas['original_freq']=self::$original_freq;
+            $datas['total']=self::$total ;
+            file_put_contents($f_name.'.cache',json_encode($datas));
+        }
+        return self::$trie;
     }// end function genTrie
 
+    
     /**
      * Static method loadUserDict
      *
